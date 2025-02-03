@@ -1,0 +1,9 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: backstage-github
+  title: '@backstage/github'
+spec:
+  lifecycle: experimental
+  type: backstage-frontend-plugin
+  owner: maintainers

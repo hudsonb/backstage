@@ -26,6 +26,7 @@ import {
 import { eventsServiceRef } from '@backstage/plugin-events-node';
 import { GithubEntityProvider } from '../providers/GithubEntityProvider';
 import { GithubLocationAnalyzer } from '../analyzers/GithubLocationAnalyzer';
+import { githubServiceRef } from '@backstage/github-node';
 
 /**
  * Registers the `GithubEntityProvider` with the catalog processing extension point.
@@ -47,6 +48,7 @@ export const githubCatalogModule = createBackendModule({
         logger: coreServices.logger,
         scheduler: coreServices.scheduler,
         catalog: catalogServiceRef,
+        github: githubServiceRef,
       },
       async init({
         catalogProcessing,
@@ -58,6 +60,7 @@ export const githubCatalogModule = createBackendModule({
         discovery,
         auth,
         catalog,
+        github,
       }) {
         catalogAnalyzers.addScmLocationAnalyzer(
           new GithubLocationAnalyzer({
@@ -65,6 +68,7 @@ export const githubCatalogModule = createBackendModule({
             config,
             auth,
             catalog,
+            github,
           }),
         );
 
@@ -73,6 +77,7 @@ export const githubCatalogModule = createBackendModule({
             events,
             logger,
             scheduler,
+            github,
           }),
         );
       },

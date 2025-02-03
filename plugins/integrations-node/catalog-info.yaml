@@ -1,0 +1,10 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: backstage-integrations-node
+  title: '@backstage/integrations-node'
+  description: Node.js library for the integrations plugin
+spec:
+  lifecycle: experimental
+  type: backstage-node-library
+  owner: maintainers

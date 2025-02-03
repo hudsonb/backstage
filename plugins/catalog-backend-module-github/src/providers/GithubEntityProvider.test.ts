@@ -35,12 +35,14 @@ import {
   RepositoryEvent,
   RepositoryRenamedEvent,
 } from '@octokit/webhooks-types';
+import { GithubService } from '@backstage/github-node';
 
 jest.mock('../lib/github', () => {
   return {
     getOrganizationRepositories: jest.fn(),
   };
 });
+
 class PersistingTaskRunner implements SchedulerServiceTaskRunner {
   private tasks: SchedulerServiceTaskInvocationDefinition[] = [];
 
@@ -82,6 +84,7 @@ describe('GithubEntityProvider', () => {
     return GithubEntityProvider.fromConfig(config, {
       logger,
       schedule,
+      github: {} as GithubService,
     });
   };
 
@@ -183,6 +186,9 @@ describe('GithubEntityProvider', () => {
     const provider = GithubEntityProvider.fromConfig(config, {
       logger,
       schedule,
+      github: {
+        forUrl: jest.fn().mockResolvedValue({}),
+      } as GithubService,
     })[0];
 
     const mockGetOrganizationRepositories = jest.spyOn(
@@ -258,6 +264,9 @@ describe('GithubEntityProvider', () => {
     const provider = GithubEntityProvider.fromConfig(config, {
       logger,
       schedule,
+      github: {
+        forUrl: jest.fn().mockResolvedValue({}),
+      } as GithubService,
     })[0];
 
     const mockGetOrganizationRepositories = jest.spyOn(
@@ -339,6 +348,9 @@ describe('GithubEntityProvider', () => {
     const provider = GithubEntityProvider.fromConfig(config, {
       logger,
       schedule,
+      github: {
+        forUrl: jest.fn().mockResolvedValue({}),
+      } as GithubService,
     })[0];
 
     const mockGetOrganizationRepositories = jest.spyOn(
@@ -420,6 +432,9 @@ describe('GithubEntityProvider', () => {
     const provider = GithubEntityProvider.fromConfig(config, {
       logger,
       schedule,
+      github: {
+        forUrl: jest.fn().mockResolvedValue({}),
+      } as GithubService,
     })[0];
 
     const mockGetOrganizationRepositories = jest.spyOn(
@@ -512,6 +527,9 @@ describe('GithubEntityProvider', () => {
     const provider = GithubEntityProvider.fromConfig(config, {
       logger,
       schedule,
+      github: {
+        forUrl: jest.fn().mockResolvedValue({}),
+      } as GithubService,
     })[0];
 
     const mockGetOrganizationRepositories = jest.spyOn(
@@ -617,6 +635,7 @@ describe('GithubEntityProvider', () => {
     expect(() =>
       GithubEntityProvider.fromConfig(config, {
         logger,
+        github: {} as GithubService,
       }),
     ).toThrow('Either schedule or scheduler must be provided');
   });
@@ -638,6 +657,7 @@ describe('GithubEntityProvider', () => {
     const providers = GithubEntityProvider.fromConfig(config, {
       logger,
       scheduler,
+      github: {} as GithubService,
     });
 
     expect(providers).toHaveLength(1);

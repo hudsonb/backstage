@@ -16,12 +16,10 @@
 
 import { CatalogApi, CatalogClient } from '@backstage/catalog-client';
 import {
-  DefaultGithubCredentialsProvider,
   GithubCredentialsProvider,
   ScmIntegrationRegistry,
   ScmIntegrations,
 } from '@backstage/integration';
-import { Octokit } from '@octokit/rest';
 import { isEmpty, trimEnd } from 'lodash';
 import parseGitUrl from 'git-url-parse';
 import {
@@ -35,6 +33,7 @@ import {
 import { Config } from '@backstage/config';
 import { AuthService, DiscoveryService } from '@backstage/backend-plugin-api';
 import { extname } from 'path';
+import { GithubService } from '@backstage/github-node';
 
 /** @public */
 export type GithubLocationAnalyzerOptions = {
@@ -44,28 +43,28 @@ export type GithubLocationAnalyzerOptions = {
   auth?: AuthService;
   githubCredentialsProvider?: GithubCredentialsProvider;
   catalog?: CatalogApi;
+  github: GithubService;
 };
 
 /** @public */
 export class GithubLocationAnalyzer implements ScmLocationAnalyzer {
   private readonly catalogClient: CatalogApi;
-  private readonly githubCredentialsProvider: GithubCredentialsProvider;
   private readonly integrations: ScmIntegrationRegistry;
   private readonly auth: AuthService;
+  private readonly github: GithubService;
 
   constructor(options: GithubLocationAnalyzerOptions) {
     this.catalogClient =
       options.catalog ?? new CatalogClient({ discoveryApi: options.discovery });
     this.integrations = ScmIntegrations.fromConfig(options.config);
-    this.githubCredentialsProvider =
-      options.githubCredentialsProvider ||
-      DefaultGithubCredentialsProvider.fromIntegrations(this.integrations);
 
     this.auth = createLegacyAuthAdapters({
       auth: options.auth,
       discovery: options.discovery,
       tokenManager: options.tokenManager,
     }).auth;
+
+    this.github = options.github;
   }
 
   supports(url: string) {
@@ -90,15 +89,7 @@ export class GithubLocationAnalyzer implements ScmLocationAnalyzer {
       throw new Error('Make sure you have a GitHub integration configured');
     }
 
-    const { token: githubToken } =
-      await this.githubCredentialsProvider.getCredentials({
-        url,
-      });
-
-    const octokitClient = new Octokit({
-      auth: githubToken,
-      baseUrl: integration.config.apiBaseUrl,
-    });
+    const octokitClient = await this.github.forUrl(url);
 
     const searchResult = await octokitClient.search
       .code({ q: query })

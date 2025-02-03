@@ -27,9 +27,7 @@ import {
 import { withLocations } from './withLocations';
 
 import { DeferredEntity } from '@backstage/plugin-catalog-node';
-import { Octokit } from '@octokit/core';
-import { LoggerService } from '@backstage/backend-plugin-api';
-import { throttling } from '@octokit/plugin-throttling';
+
 // Graphql types
 
 export type QueryResponse = {
@@ -712,58 +710,3 @@ export const createReplaceEntitiesOperation =
       added: entitiesToReplace,
     };
   };
-
-/**
- * Creates a GraphQL Client with Throttling
- */
-export const createGraphqlClient = (args: {
-  headers:
-    | {
-        [name: string]: string;
-      }
-    | undefined;
-  baseUrl: string;
-  logger: LoggerService;
-}): typeof graphql => {
-  const { headers, baseUrl, logger } = args;
-  const ThrottledOctokit = Octokit.plugin(throttling);
-  const octokit = new ThrottledOctokit({
-    throttle: {
-      onRateLimit: (retryAfter, rateLimitData, _, retryCount) => {
-        logger.warn(
-          `Request quota exhausted for request ${rateLimitData?.method} ${rateLimitData?.url}`,
-        );
-
-        if (retryCount < 2) {
-          logger.warn(
-            `Retrying after ${retryAfter} seconds for the ${retryCount} time due to Rate Limit!`,
-          );
-          return true;
-        }
-
-        return false;
-      },
-      onSecondaryRateLimit: (retryAfter, rateLimitData, _, retryCount) => {
-        logger.warn(
-          `Secondary Rate Limit Exhausted for request ${rateLimitData?.method} ${rateLimitData?.url}`,
-        );
-
-        if (retryCount < 2) {
-          logger.warn(
-            `Retrying after ${retryAfter} seconds for the ${retryCount} time due to Secondary Rate Limit!`,
-          );
-          return true;
-        }
-
-        return false;
-      },
-    },
-  });
-
-  const client = octokit.graphql.defaults({
-    headers,
-    baseUrl,
-  });
-
-  return client;
-};

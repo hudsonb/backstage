@@ -39,6 +39,11 @@ import {
 } from '@backstage/backend-test-utils';
 import { setupServer } from 'msw/node';
 import { http, HttpResponse } from 'msw';
+import { GithubService } from '@backstage/github-node';
+
+const github: GithubService = {
+  forUrl: async () => octokit as any,
+} as GithubService;
 
 const server = setupServer();
 
@@ -118,6 +123,7 @@ describe('GithubLocationAnalyzer', () => {
       discovery: mockDiscovery,
       auth: mockAuthService,
       config,
+      github,
     });
     const result = await analyzer.analyze({
       url: 'https://github.com/foo/bar',
@@ -145,6 +151,7 @@ describe('GithubLocationAnalyzer', () => {
       discovery: mockDiscovery,
       auth: mockAuthService,
       config,
+      github,
     });
     const result = await analyzer.analyze({
       url: 'https://github.com/foo/bar',
@@ -171,6 +178,7 @@ describe('GithubLocationAnalyzer', () => {
       discovery: mockDiscovery,
       auth: mockAuthService,
       config,
+      github,
     });
     const result = await analyzer.analyze({
       url: 'https://github.com/foo/bar',

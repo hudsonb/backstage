@@ -16,11 +16,9 @@
 
 import { Config } from '@backstage/config';
 import {
-  GithubCredentialsProvider,
   GithubIntegration,
   GithubIntegrationConfig,
   ScmIntegrations,
-  SingleInstanceGithubCredentialsProvider,
 } from '@backstage/integration';
 import {
   DeferredEntity,
@@ -31,7 +29,6 @@ import {
 
 import { LocationSpec } from '@backstage/plugin-catalog-common';
 
-import { graphql } from '@octokit/graphql';
 import * as uuid from 'uuid';
 import {
   GithubEntityProviderConfig,
@@ -70,6 +67,7 @@ import {
   SchedulerService,
   SchedulerServiceTaskRunner,
 } from '@backstage/backend-plugin-api';
+import { GithubService } from '@backstage/github-node';
 
 const EVENT_TOPICS = ['github.push', 'github.repository'];
 
@@ -99,7 +97,7 @@ export class GithubEntityProvider implements EntityProvider, EventSubscriber {
   private readonly integration: GithubIntegrationConfig;
   private readonly scheduleFn: () => Promise<void>;
   private connection?: EntityProviderConnection;
-  private readonly githubCredentialsProvider: GithubCredentialsProvider;
+  private readonly github: GithubService;
 
   static fromConfig(
     config: Config,
@@ -108,6 +106,7 @@ export class GithubEntityProvider implements EntityProvider, EventSubscriber {
       logger: LoggerService;
       schedule?: SchedulerServiceTaskRunner;
       scheduler?: SchedulerService;
+      github: GithubService;
     },
   ): GithubEntityProvider[] {
     if (!options.schedule && !options.scheduler) {
@@ -134,6 +133,7 @@ export class GithubEntityProvider implements EntityProvider, EventSubscriber {
         providerConfig,
         integration,
         options.logger,
+        options.github,
         taskRunner,
         options.events,
       );
@@ -144,6 +144,7 @@ export class GithubEntityProvider implements EntityProvider, EventSubscriber {
     config: GithubEntityProviderConfig,
     integration: GithubIntegration,
     logger: LoggerService,
+    github: GithubService,
     taskRunner: SchedulerServiceTaskRunner,
     events?: EventsService,
   ) {
@@ -154,8 +155,7 @@ export class GithubEntityProvider implements EntityProvider, EventSubscriber {
       target: this.getProviderName(),
     });
     this.scheduleFn = this.createScheduleFn(taskRunner);
-    this.githubCredentialsProvider =
-      SingleInstanceGithubCredentialsProvider.create(integration.config);
+    this.github = github;
   }
 
   /** {@inheritdoc @backstage/plugin-catalog-backend#EntityProvider.getProviderName} */
@@ -204,7 +204,6 @@ export class GithubEntityProvider implements EntityProvider, EventSubscriber {
     if (!this.connection) {
       throw new Error('Not initialized');
     }
-
     const targets = await this.findCatalogFiles();
     const matchingTargets = this.matchesFilters(targets);
     const entities = this.toDeferredEntitiesFromRepos(matchingTargets);
@@ -223,15 +222,7 @@ export class GithubEntityProvider implements EntityProvider, EventSubscriber {
     const organization = this.config.organization;
     const host = this.integration.host;
     const orgUrl = `https://${host}/${organization}`;
-
-    const { headers } = await this.githubCredentialsProvider.getCredentials({
-      url: orgUrl,
-    });
-
-    return graphql.defaults({
-      baseUrl: this.integration.apiBaseUrl,
-      headers,
-    });
+    return await this.github.forUrl(orgUrl);
   }
 
   // go to the server and get all repositories
@@ -241,7 +232,12 @@ export class GithubEntityProvider implements EntityProvider, EventSubscriber {
     const client = await this.createGraphqlClient();
 
     const { repositories: repositoriesFromGithub } =
-      await getOrganizationRepositories(client, organization, catalogPath);
+      await getOrganizationRepositories(
+        client.graphql,
+        organization,
+        catalogPath,
+      );
+
     const repositories = repositoriesFromGithub.map(
       this.createRepoFromGithubResponse,
     );
@@ -602,7 +598,7 @@ export class GithubEntityProvider implements EntityProvider, EventSubscriber {
       const client = await this.createGraphqlClient();
 
       const repositoryFromGithub = await getOrganizationRepository(
-        client,
+        client.graphql,
         organization,
         repository.name,
         catalogPath,

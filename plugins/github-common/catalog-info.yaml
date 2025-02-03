@@ -1,0 +1,10 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: backstage-github-common
+  title: '@backstage/github-common'
+  description: Common functionalities for the github plugin
+spec:
+  lifecycle: experimental
+  type: backstage-common-library
+  owner: maintainers

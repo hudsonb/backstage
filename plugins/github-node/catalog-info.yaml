@@ -1,0 +1,10 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: backstage-github-node
+  title: '@backstage/github-node'
+  description: Node.js library for the github plugin
+spec:
+  lifecycle: experimental
+  type: backstage-node-library
+  owner: maintainers
