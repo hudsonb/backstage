@@ -222,7 +222,7 @@ export class GithubEntityProvider implements EntityProvider, EventSubscriber {
     const organization = this.config.organization;
     const host = this.integration.host;
     const orgUrl = `https://${host}/${organization}`;
-    return await this.github.forUrl(orgUrl);
+    return (await this.github.forHost(orgUrl)).graphql;
   }
 
   // go to the server and get all repositories
@@ -232,11 +232,7 @@ export class GithubEntityProvider implements EntityProvider, EventSubscriber {
     const client = await this.createGraphqlClient();
 
     const { repositories: repositoriesFromGithub } =
-      await getOrganizationRepositories(
-        client.graphql,
-        organization,
-        catalogPath,
-      );
+      await getOrganizationRepositories(client, organization, catalogPath);
 
     const repositories = repositoriesFromGithub.map(
       this.createRepoFromGithubResponse,
@@ -598,7 +594,7 @@ export class GithubEntityProvider implements EntityProvider, EventSubscriber {
       const client = await this.createGraphqlClient();
 
       const repositoryFromGithub = await getOrganizationRepository(
-        client.graphql,
+        client,
         organization,
         repository.name,
         catalogPath,

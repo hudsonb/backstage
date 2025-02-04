@@ -15,6 +15,7 @@
  */
 import { Octokit } from '@octokit/rest';
 import {
+  LoggerService,
   coreServices,
   createServiceFactory,
   createServiceRef,
@@ -29,7 +30,7 @@ export interface GithubService {
 class DefaultGithubService implements GithubService {
   readonly client: GithubClient;
 
-  constructor(params: { discovery: DiscoveryApi }) {
+  constructor(params: { discovery: DiscoveryApi; logger: LoggerService }) {
     this.client = new GithubClient(params);
   }
 
@@ -45,10 +46,12 @@ export const githubServiceRef = createServiceRef<GithubService>({
       service,
       deps: {
         discovery: coreServices.discovery,
+        logger: coreServices.logger,
       },
-      async factory({ discovery }) {
+      async factory({ discovery, logger }) {
         return new DefaultGithubService({
           discovery,
+          logger,
         });
       },
     }),

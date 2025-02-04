@@ -39,6 +39,7 @@ export class GithubClient {
         fetch: this.#fetch?.fetch,
         headers: {
           'github-host': host,
+          'Content-Type': 'application/json',
         },
       },
       retry: { enabled: false },

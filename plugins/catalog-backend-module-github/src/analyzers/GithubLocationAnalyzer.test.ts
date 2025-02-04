@@ -42,7 +42,7 @@ import { http, HttpResponse } from 'msw';
 import { GithubService } from '@backstage/github-node';
 
 const github: GithubService = {
-  forUrl: async () => octokit as any,
+  forHost: async () => octokit as any,
 } as GithubService;
 
 const server = setupServer();

@@ -40,6 +40,8 @@ export async function createRouter({
   logger: LoggerService;
 }): Promise<express.Router> {
   const router = express.Router();
+  router.use(express.json());
+
   const integrations = ScmIntegrations.fromConfig(config);
   const credentialsProvider =
     DefaultGithubCredentialsProvider.fromIntegrations(integrations);
@@ -47,9 +49,10 @@ export async function createRouter({
   router.use(async (req, res) => {
     const { method, originalUrl, body } = req;
 
-    const url = req.headers['github-url'] as string;
+    // logger.info(`github backend received request: method=${method}, url=${originalUrl}, headers=${JSON.stringify(req.headers)}, body=${JSON.stringify(body)}`);
+    const url = req.headers['github-host'] as string;
     if (!url) {
-      throw new InputError('Missing "github-url" header');
+      throw new InputError('Missing "github-host" header');
     }
 
     try {
@@ -60,22 +63,35 @@ export async function createRouter({
         logger,
       });
 
+      if (!octokit) {
+        throw new Error(`Failed to create Octokit instance for ${url}`);
+      }
+
+      const updatedUrl = originalUrl.replace('/api/github', '');
+
+      // logger.info(`Making ${method} request to ${updatedUrl} with body ${JSON.stringify(body)}`);
       const response = await octokit.request({
         method,
-        url: originalUrl,
+        url: updatedUrl,
         data: body,
       });
 
-      res
-        .status(response.status)
-        .set(response.headers || {})
-        .json(response.data);
+      // logger.info(`Octokit response is ${response.status} ${JSON.stringify(response.headers)} ${JSON.stringify(response.data)}`);
+
+      const filteredHeaders = { ...response.headers };
+      delete filteredHeaders['transfer-encoding'];
+      delete filteredHeaders['content-encoding'];
+      filteredHeaders['content-type'] = 'application/json';
+
+      res.writeHead(response.status, filteredHeaders);
+      res.end(JSON.stringify(response.data));
+
+      // logger.info(`Sending response with headers ${JSON.stringify(res.getHeaders())}`);
+
+      // logger.info(`Responded to ${method} request to ${originalUrl} with ${JSON.stringify(response)}`);
     } catch (error: any) {
       logger.error(error);
-      res
-        .status(error.status || 500)
-        .set(error.headers)
-        .json({ error: error.message });
+      res.status(error.status || 500).json({ error: error.message });
     }
   });
 

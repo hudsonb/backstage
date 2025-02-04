@@ -89,7 +89,7 @@ export class GithubLocationAnalyzer implements ScmLocationAnalyzer {
       throw new Error('Make sure you have a GitHub integration configured');
     }
 
-    const octokitClient = await this.github.forUrl(url);
+    const octokitClient = await this.github.forHost(url);
 
     const searchResult = await octokitClient.search
       .code({ q: query })

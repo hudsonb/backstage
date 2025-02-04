@@ -62,6 +62,9 @@ export const githubCatalogModule = createBackendModule({
         catalog,
         github,
       }) {
+        logger.info(
+          `Created githubCatalogModule and github service is ${github}`,
+        );
         catalogAnalyzers.addScmLocationAnalyzer(
           new GithubLocationAnalyzer({
             discovery,

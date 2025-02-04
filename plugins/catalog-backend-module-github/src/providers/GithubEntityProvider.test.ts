@@ -187,7 +187,7 @@ describe('GithubEntityProvider', () => {
       logger,
       schedule,
       github: {
-        forUrl: jest.fn().mockResolvedValue({}),
+        forHost: jest.fn().mockResolvedValue({}),
       } as GithubService,
     })[0];
 
@@ -265,7 +265,7 @@ describe('GithubEntityProvider', () => {
       logger,
       schedule,
       github: {
-        forUrl: jest.fn().mockResolvedValue({}),
+        forHost: jest.fn().mockResolvedValue({}),
       } as GithubService,
     })[0];
 
@@ -349,7 +349,7 @@ describe('GithubEntityProvider', () => {
       logger,
       schedule,
       github: {
-        forUrl: jest.fn().mockResolvedValue({}),
+        forHost: jest.fn().mockResolvedValue({}),
       } as GithubService,
     })[0];
 
@@ -433,7 +433,7 @@ describe('GithubEntityProvider', () => {
       logger,
       schedule,
       github: {
-        forUrl: jest.fn().mockResolvedValue({}),
+        forHost: jest.fn().mockResolvedValue({}),
       } as GithubService,
     })[0];
 
@@ -528,7 +528,7 @@ describe('GithubEntityProvider', () => {
       logger,
       schedule,
       github: {
-        forUrl: jest.fn().mockResolvedValue({}),
+        forHost: jest.fn().mockResolvedValue({}),
       } as GithubService,
     })[0];
 

@@ -256,18 +256,25 @@ catalog:
         - Domain
         - Location
   providers:
-    azureBlob:
-      accountName: ${ACCOUNT_NAME}
-      containerName: ${CONTAINER_NAME}
-      schedule: # same options as in TaskScheduleDefinition
-        # supports cron, ISO duration, "human duration" as used in code
-        frequency: { minutes: 30 }
-        # supports ISO duration, "human duration" as used in code
-        timeout: { minutes: 3 }
-    backstageOpenapi:
-      plugins:
-        - catalog
-        - search
+#    azureBlob:
+#      accountName: ${ACCOUNT_NAME}
+#      containerName: ${CONTAINER_NAME}
+#      schedule: # same options as in TaskScheduleDefinition
+#        # supports cron, ISO duration, "human duration" as used in code
+#        frequency: { minutes: 30 }
+#        # supports ISO duration, "human duration" as used in code
+#        timeout: { minutes: 3 }
+#    backstageOpenapi:
+#      plugins:
+#        - catalog
+#        - search
+    github:
+      providerId:
+        organization: 'backstage' # string
+        catalogPath: '/catalog-info.yaml' # string
+#        filters:
+##          branch: 'main'
+#          repository: '.*' # Regex
 
   processors:
     ldapOrg:
@@ -302,28 +309,22 @@ catalog:
     # File locations are relative to the current working directory of the
     # backend, for example packages/backend/.
 
-    # Backstage example entities
-    - type: file
-      target: ../catalog-model/examples/all.yaml
-    # Backstage example groups and users
-    - type: file
-      target: ../catalog-model/examples/acme-corp.yaml
-      rules:
-        - allow: [User, Group]
-    # Example component for github-actions and TechDocs
-    - type: file
-      target: ../../plugins/github-actions/examples/sample.yaml
-    # Example component for TechDocs
-    - type: file
-      target: ../../plugins/techdocs-backend/examples/documented-component/catalog-info.yaml
-    # Example component for ADRs
-    - type: file
-      target: ../../plugins/adr/examples/component/catalog-info.yaml
-    # Backstage example templates
-    - type: file
-      target: ../../plugins/scaffolder-backend/sample-templates/all-templates.yaml
-      rules:
-        - allow: [Template]
+    # Backstage example components
+#    - type: url
+#      target: https://github.com/backstage/backstage/blob/master/packages/catalog-model/examples/all-components.yaml
+#
+#    # Backstage example systems
+#    - type: url
+#      target: https://github.com/backstage/backstage/blob/master/packages/catalog-model/examples/all-systems.yaml
+#
+#    # Backstage example resources
+#    - type: url
+#      target: https://github.com/backstage/backstage/blob/master/packages/catalog-model/examples/all-resources.yaml
+#
+#    # Backstage example organization groups
+#    - type: url
+#      target: https://github.com/backstage/backstage/blob/master/packages/catalog-model/examples/acme/org.yaml
+
 scaffolder:
   # Use to customize default commit author info used when new components are created
   # defaultAuthor:
