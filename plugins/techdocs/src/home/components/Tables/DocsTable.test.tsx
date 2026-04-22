@@ -91,13 +91,11 @@ describe('DocsTable test', () => {
       },
     );
 
-    const link1 = await screen.findByText('testName');
-    const link2 = await screen.findByText('testName2');
-    expect(link1).toBeInTheDocument();
+    const link1 = await screen.findByRole('link', { name: 'testName' });
+    const link2 = await screen.findByRole('link', { name: 'testName2' });
     expect(link1.getAttribute('href')).toContain(
       '/docs/default/testkind/testname',
     );
-    expect(link2).toBeInTheDocument();
     expect(link2.getAttribute('href')).toContain(
       '/docs/default/testkind2/testname2',
     );
@@ -136,11 +134,13 @@ describe('DocsTable test', () => {
       },
     );
 
-    const button = await screen.findByText('testName');
+    const link = await screen.findByRole('link', {
+      name: 'SomeNamespace/testName',
+    });
     expect(getOptionalBooleanMock).toHaveBeenCalledWith(
       'techdocs.legacyUseCaseSensitiveTripletPaths',
     );
-    expect(button.getAttribute('href')).toContain(
+    expect(link.getAttribute('href')).toContain(
       '/techdocs/SomeNamespace/TestKind/testName',
     );
   });

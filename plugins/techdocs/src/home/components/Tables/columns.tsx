@@ -15,12 +15,18 @@
  */
 
 import { Link, SubvalueCell, TableColumn } from '@backstage/core-components';
-import { EntityRefLinks } from '@backstage/plugin-catalog-react';
+import {
+  EntityDisplayName,
+  EntityRefLinks,
+  entityPresentationSnapshot,
+} from '@backstage/plugin-catalog-react';
 import { Entity } from '@backstage/catalog-model';
 import { DocsTableRow } from './types';
 
-function customTitle(entity: Entity): string {
-  return entity.metadata.title || entity.metadata.name;
+function sortableTitle(entity: Entity): string {
+  return entityPresentationSnapshot(entity).primaryTitle.toLocaleLowerCase(
+    'en-US',
+  );
 }
 
 /**
@@ -45,14 +51,20 @@ export const columnFactories = {
       searchable: true,
       defaultSort: 'asc',
       customSort: (row1, row2) => {
-        const title1 = customTitle(row1.entity).toLocaleLowerCase();
-        const title2 = customTitle(row2.entity).toLocaleLowerCase();
-        return title1.localeCompare(title2);
+        return sortableTitle(row1.entity).localeCompare(
+          sortableTitle(row2.entity),
+        );
       },
       render: (row: DocsTableRow) => (
         <SubvalueCell
           value={
-            <Link to={row.resolved.docsUrl}>{customTitle(row.entity)}</Link>
+            <Link to={row.resolved.docsUrl}>
+              <EntityDisplayName
+                entityRef={row.entity}
+                hideIcon
+                disableTooltip
+              />
+            </Link>
           }
           subvalue={row.entity.metadata.description}
         />
