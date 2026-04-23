@@ -68,6 +68,7 @@ export const mcpPlugin = createBackendPlugin({
         const mcpService = await McpService.create({
           actions,
           metrics,
+          logger,
           namespacedToolNames,
         });
 

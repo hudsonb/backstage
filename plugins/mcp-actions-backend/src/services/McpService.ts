@@ -13,11 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { BackstageCredentials } from '@backstage/backend-plugin-api';
+import {
+  BackstageCredentials,
+  LoggerService,
+} from '@backstage/backend-plugin-api';
 import { Server as McpServer } from '@modelcontextprotocol/sdk/server/index.js';
 import {
   ListToolsRequestSchema,
   CallToolRequestSchema,
+  ToolSchema,
 } from '@modelcontextprotocol/sdk/types.js';
 import { JsonObject } from '@backstage/types';
 import {
@@ -36,15 +40,19 @@ import { FilterRule, McpServerConfig } from '../config';
 
 export class McpService {
   private readonly actions: ActionsService;
+  private readonly logger: LoggerService | undefined;
   private readonly namespacedToolNames: boolean;
   private readonly operationDuration: MetricsServiceHistogram<McpServerOperationAttributes>;
+  private readonly warnedSkippedActionIds = new Set<string>();
 
   constructor(
     actions: ActionsService,
     metrics: MetricsService,
+    logger: LoggerService | undefined,
     namespacedToolNames?: boolean,
   ) {
     this.actions = actions;
+    this.logger = logger;
     this.namespacedToolNames = namespacedToolNames ?? true;
     this.operationDuration =
       metrics.createHistogram<McpServerOperationAttributes>(
@@ -60,13 +68,15 @@ export class McpService {
   static async create({
     actions,
     metrics,
+    logger,
     namespacedToolNames,
   }: {
     actions: ActionsService;
     metrics: MetricsService;
+    logger?: LoggerService;
     namespacedToolNames?: boolean;
   }) {
-    return new McpService(actions, metrics, namespacedToolNames);
+    return new McpService(actions, metrics, logger, namespacedToolNames);
   }
 
   getServer({
@@ -100,8 +110,9 @@ export class McpService {
           ? this.filterActions(allActions, serverConfig)
           : allActions;
 
-        return {
-          tools: actions.map(action => ({
+        const tools = [];
+        for (const action of actions) {
+          const tool = {
             inputSchema: action.schema.input,
             // todo(blam): this is unfortunately not supported by most clients yet.
             // When this is provided you need to provide structuredContent instead.
@@ -115,8 +126,26 @@ export class McpService {
               readOnlyHint: action.attributes.readOnly,
               openWorldHint: false,
             },
-          })),
-        };
+          };
+
+          // Validate each tool against the MCP Tool schema so that a single
+          // malformed action (e.g. an inputSchema that isn't a JSON Schema
+          // object at the root) doesn't poison the whole tools/list response.
+          const parsed = ToolSchema.safeParse(tool);
+          if (!parsed.success) {
+            if (!this.warnedSkippedActionIds.has(action.id)) {
+              this.warnedSkippedActionIds.add(action.id);
+              this.logger?.warn(
+                `Skipping MCP tool for action "${action.id}": ${parsed.error.message}`,
+              );
+            }
+            continue;
+          }
+
+          tools.push(tool);
+        }
+
+        return { tools };
       } catch (err) {
         errorType = err instanceof Error ? err.name : 'Error';
         throw err;
